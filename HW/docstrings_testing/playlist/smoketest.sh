@@ -41,7 +41,7 @@ check_db() {
   if [ $? -eq 0 ]; then
     echo "Database connection is healthy."
   else
-    echo "Database check failed."
+    echo "Database check failed.   SAD"
     exit 1
   fi
 }
