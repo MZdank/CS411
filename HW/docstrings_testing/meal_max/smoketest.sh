@@ -56,7 +56,7 @@ create_meal() {
   fi
 }
 
-clear_catalog() {
+clear_meals() {
   echo "Clearing all meals..."
   curl -s -X DELETE "$BASE_URL/clear-meals" | grep -q '"status": "success"'
 }
@@ -100,10 +100,11 @@ get_meal_by_name() {
     echo "Meal retrieved successfully by name ($meal_name)."
     if [ "$ECHO_JSON" = true ]; then
       echo "Meal JSON (Name: $meal_name):"
-      echo "$response" | jq .
+      echo "$response"
     fi
   else
     echo "Failed to get meal by name ($meal_name)."
+    echo "$response"
     exit 1
   fi
 }
@@ -118,13 +119,13 @@ get_meal_by_name() {
 prep_combatant() {
   meal_name=$1
   echo "Preparing combatant: $meal_name..."
+
   response=$(curl -s -X POST "$BASE_URL/prep-combatant" -H "Content-Type: application/json" -d "{\"meal\":\"$meal_name\"}")
-  
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Combatant prepared successfully: $meal_name"
   else
     echo "Failed to prepare combatant: $meal_name"
-    exit 1
+    echo "$response"     
   fi
 }
 
@@ -134,7 +135,8 @@ get_combatants() {
   
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Combatants retrieved successfully."
-    echo "$response" | jq .combatants
+    echo "Combatant Info JSON:"
+    echo "$response" | jq .
   else
     echo "Failed to retrieve combatants."
     exit 1
@@ -143,15 +145,17 @@ get_combatants() {
 
 test_battle() {
   echo "Initiating battle between prepared meals..."
-  
   response=$(curl -s -X GET "$BASE_URL/api/battle")
   
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Battle initiated successfully."
-    winner=$(echo "$response" | jq -r '.winner')
-    echo "The winner of the battle is: $winner"
+    if [ "$ECHO_JSON" = true ]; then
+      echo "Battle Info JSON:"
+      echo "$response" | jq .
+    fi
   else
-    echo "Battle initiation failed."
+    echo "Battle initiation failed. Full response:"
+    echo "$response" | jq .
     exit 1
   fi
 }
@@ -170,14 +174,18 @@ clear_combatants() {
 
 check_health
 check_db
-clear_catalog
+clear_meals
 create_meal "Spaghetti" "Italian" 69 "MED"
 create_meal "Button" "Mongolian? I think" 42 "LOW"
+create_meal "Sushi" "Japanese" 5 "HIGH"
 
 clear_combatants
 
 prep_combatant "Spaghetti"
 prep_combatant "Button"
+prep_combatant "Sushi"
+
+get_meal_by_id 1
 
 get_combatants
 
@@ -189,4 +197,3 @@ get_meal_by_name "Spaghetti"
 
 get_meal_by_id 1
 delete_meal_by_id 1
-
