@@ -136,7 +136,7 @@ get_combatants() {
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Combatants retrieved successfully."
     echo "Combatant Info JSON:"
-    echo "$response" | jq .
+    echo "$response"
   else
     echo "Failed to retrieve combatants."
     exit 1
@@ -145,7 +145,7 @@ get_combatants() {
 
 test_battle() {
   echo "Initiating battle between prepared meals..."
-  response=$(curl -s -X GET "$BASE_URL/api/battle")
+  response=$(curl -s -X GET "$BASE_URL/battle")
   
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Battle initiated successfully."
@@ -155,7 +155,7 @@ test_battle() {
     fi
   else
     echo "Battle initiation failed. Full response:"
-    echo "$response" | jq .
+    echo "$response"
     exit 1
   fi
 }
@@ -172,9 +172,32 @@ clear_combatants() {
   fi
 }
 
+############################################################
+#
+# Leaderboard
+#
+############################################################
+
+get_meal_leaderboard() {
+  echo "Getting meal leaderboard sorted by play count..."
+  response=$(curl -s -X GET "$BASE_URL/leaderboard")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Meal leaderboard retrieved successfully."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "Leaderboard JSON:"
+      echo "$response"
+    fi
+  else
+    echo "Failed to get meal leaderboard."
+    exit 1
+  fi
+}
+
 check_health
 check_db
 clear_meals
+clear_combatants
+
 create_meal "Spaghetti" "Italian" 69 "MED"
 create_meal "Button" "Mongolian? I think" 42 "LOW"
 create_meal "Sushi" "Japanese" 5 "HIGH"
@@ -185,8 +208,6 @@ prep_combatant "Spaghetti"
 prep_combatant "Button"
 prep_combatant "Sushi"
 
-get_meal_by_id 1
-
 get_combatants
 
 test_battle
@@ -194,6 +215,8 @@ test_battle
 clear_combatants
 
 get_meal_by_name "Spaghetti"
+
+get_meal_leaderboard
 
 get_meal_by_id 1
 delete_meal_by_id 1
