@@ -26,6 +26,12 @@ def sample_meal2():
 def sample_battle(sample_meal1, sample_meal2):
     return [sample_meal1, sample_meal2]
 
+def test_battle(battle_model, sample_battle):
+    """Test a a battle will return the correct winner."""
+    battle_model.combatants.extend(sample_battle)
+    winner = battle_model.battle()
+    assert winner == "Soup"
+
 def test_clear_combatants(battle_model, sample_battle):
     """Test clearing the comatants of the battle."""
     battle_model.combatants.extend(sample_battle)
@@ -44,11 +50,17 @@ def test_get_combatants(battle_model, sample_battle):
     all_combatants = battle_model.get_combatants()
     assert len(all_combatants) == 2
     assert all_combatants[0].id == 1
-    assert all_combatants[1].id ==2
+    assert all_combatants[1].id == 2
 
 def test_prep_combatant(battle_model, sample_meal1):
     """Test adding a meal to the combatant list."""
     battle_model.prep_combatant(sample_meal1)
     assert len(battle_model.combatants) == 1
     assert battle_model.combatants[0].meal == 'Soup'
+
+def test_add3_prep_combatant(battle_model, sample_battle, sample_meal1):
+    """Test error adding a combatant to a already full battle."""
+    battle_model.combatants.extend(sample_battle)
+    with pytest.raises(ValueError, match="Combatant list is full, cannot add more combatants."):
+        battle_model.prep_combatant(sample_meal1)
 
