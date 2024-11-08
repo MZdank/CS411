@@ -28,20 +28,20 @@ def sample_battle(sample_meal1, sample_meal2):
 
 def test_clear_combatants(battle_model, sample_battle):
     """Test clearing the comatants of the battle."""
-    battle_model.battle(sample_battle)
+    battle_model.combatants.extend(sample_battle)
     battle_model.clear_combatants()
     assert len(battle_model.combatants) == 0, "Combatants should be empty after clearing"
  
-def test_get_battle_score(sample_meal1):
+def test_get_battle_score(battle_model, sample_meal1):
     """Test getting the battle score generated for a combatant."""
-    method_score = sample_meal1.get_battle_score()
-    computed_score = (19.02 * len(sample_meal1.cuisine)) - 1
+    method_score = battle_model.get_battle_score(sample_meal1)
+    computed_score = (19.02 * 6) - 3
     assert method_score == computed_score
 
 def test_get_combatants(battle_model, sample_battle):
     """Test successfully retrieving all the combatants from the combatant table."""
-    battle_model.battle.extend(sample_battle)
-    all_combatants = battle_model.get_combatants
+    battle_model.combatants.extend(sample_battle)
+    all_combatants = battle_model.get_combatants()
     assert len(all_combatants) == 2
     assert all_combatants[0].id == 1
     assert all_combatants[1].id ==2
@@ -49,6 +49,6 @@ def test_get_combatants(battle_model, sample_battle):
 def test_prep_combatant(battle_model, sample_meal1):
     """Test adding a meal to the combatant list."""
     battle_model.prep_combatant(sample_meal1)
-    assert len(battle_model.battle) == 1
-    assert battle_model.battle[0].name == 'Soup'
+    assert len(battle_model.combatants) == 1
+    assert battle_model.combatants[0].meal == 'Soup'
 
