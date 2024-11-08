@@ -301,8 +301,6 @@ def test_update_meal_stats_loss(mock_cursor):
     expected_arguments = (meal_id, 'loss')
     assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
 
-
-### Test for Updating a Deleted Song:
 def test_update_meal_stats_deleted_meal(mock_cursor):
     """Test error when trying to update stats for a deleted meal."""
 
@@ -315,3 +313,79 @@ def test_update_meal_stats_deleted_meal(mock_cursor):
 
     # Ensure that no SQL query for updating play count was executed
     mock_cursor.execute.assert_called_once_with("SELECT deleted FROM meals WHERE id = ?", (1,))
+
+######################################################
+#
+#    leaderboard
+#
+######################################################
+
+def test_get_leaderboard(mock_cursor):
+    """Test retrieving the leaderboard of meals sorted by wins or win percentage."""
+
+    # Simulate leaderboard data in the database
+    mock_cursor.fetchall.return_value = [
+        (1, "Meal A", "Italian", 15.99, "Easy", 10, 8, 0.8),
+        (2, "Meal B", "Mexican", 12.50, "Medium", 15, 10, 0.6667),
+        (3, "Meal C", "Chinese", 10.00, "Hard", 20, 15, 0.75)
+    ]
+
+    # Test sorting by wins
+    leaderboard = get_leaderboard(sort_by="wins")
+
+    # Expected output when sorted by wins
+    expected_result_by_wins = [
+        {"id": 3, "meal": "Meal C", "cuisine": "Chinese", "price": 10.00, "difficulty": "Hard", "battles": 20, "wins": 15, "win_pct": 75.0},
+        {"id": 2, "meal": "Meal B", "cuisine": "Mexican", "price": 12.50, "difficulty": "Medium", "battles": 15, "wins": 10, "win_pct": 66.7},
+        {"id": 1, "meal": "Meal A", "cuisine": "Italian", "price": 15.99, "difficulty": "Easy", "battles": 10, "wins": 8, "win_pct": 80.0}
+    ]
+
+    assert leaderboard == expected_result_by_wins, f"Expected {expected_result_by_wins}, but got {leaderboard}"
+
+    # Ensure the SQL query was executed correctly for "wins" sort
+    expected_query_by_wins = normalize_whitespace("""
+        SELECT id, meal, cuisine, price, difficulty, battles, wins, (wins * 1.0 / battles) AS win_pct
+        FROM meals WHERE deleted = false AND battles > 0
+        ORDER BY wins DESC
+    """)
+    actual_query_by_wins = normalize_whitespace(mock_cursor.execute.call_args[0][0])
+    assert actual_query_by_wins == expected_query_by_wins, "The SQL query for wins did not match the expected structure."
+
+    # Test sorting by win percentage
+    leaderboard = get_leaderboard(sort_by="win_pct")
+
+    # Expected output when sorted by win percentage
+    expected_result_by_win_pct = [
+        {"id": 1, "meal": "Meal A", "cuisine": "Italian", "price": 15.99, "difficulty": "Easy", "battles": 10, "wins": 8, "win_pct": 80.0},
+        {"id": 3, "meal": "Meal C", "cuisine": "Chinese", "price": 10.00, "difficulty": "Hard", "battles": 20, "wins": 15, "win_pct": 75.0},
+        {"id": 2, "meal": "Meal B", "cuisine": "Mexican", "price": 12.50, "difficulty": "Medium", "battles": 15, "wins": 10, "win_pct": 66.7}
+    ]
+
+    assert leaderboard == expected_result_by_win_pct, f"Expected {expected_result_by_win_pct}, but got {leaderboard}"
+
+    # Ensure the SQL query was executed correctly for "win_pct" sort
+    expected_query_by_win_pct = normalize_whitespace("""
+        SELECT id, meal, cuisine, price, difficulty, battles, wins, (wins * 1.0 / battles) AS win_pct
+        FROM meals WHERE deleted = false AND battles > 0
+        ORDER BY win_pct DESC
+    """)
+    actual_query_by_win_pct = normalize_whitespace(mock_cursor.execute.call_args[0][0])
+    assert actual_query_by_win_pct == expected_query_by_win_pct, "The SQL query for win_pct did not match the expected structure."
+
+def test_get_leaderboard_empty(mock_cursor, caplog):
+    """Test getting the leaderboard when it's empty"""
+
+    #empty
+    mock_cursor.fetchall.return_value = []
+
+    result = get_leaderboard()
+
+    assert result == [], f"Expected empty list, but got {result}"
+
+    expected_query = normalize_whitespace("""
+        SELECT id, meal, cuisine, price, difficulty, battles, wins, (wins * 1.0 / battles) AS win_pct
+        FROM meals WHERE deleted = false AND battles > 0
+    """)
+    actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
+    assert actual_query == expected_query, "The SQL query did not match the expected structure."
+
