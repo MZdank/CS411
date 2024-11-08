@@ -54,27 +54,34 @@ def test_create_meal(mock_cursor):
     """Testing creating a new meal"""
     create_meal(meal="Sushi", cuisine="Japanese", price="10", difficulty="HIGH")
 
+    expected_query = normalize_whitespace("""
+        INSERT INTO meals (meal, cuisine, price, difficulty)
+        VALUES (?, ?, ?, ?)
+    """)
+
     actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
-#Add expected query after first successful run
-    assert actual_query
+
+    assert actual_query == expected_query, "The SQL query did not match the expected structure."
 
     actual_arguments = mock_cursor.execute.call_args[0][1]
 
-    assert actual_arguments
+    expected_arguments = ("Sushi", "Japanese", 10, "HIGH")
+    assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
 
-def test_create_song_invalid_duration():
-    """Test error when trying to create a song with an invalid duration (e.g., negative duration)"""
+def test_create_meal_duplicate():
+    """Testing creating a meal with a duplicate name"""
 
-    # Attempt to create a song with a negative duration
-    with pytest.raises(ValueError, match="Invalid song duration: -180 \(must be a positive integer\)."):
-        create_song(artist="Artist Name", title="Song Title", year=2022, genre="Pop", duration=-180)
+    # Simulate that the database will raise an IntegrityError due to a duplicate entry
+    mock_cursor.execute.side_effect = sqlite3.IntegrityError("UNIQUE constraint failed: Meal.meal")
 
-    # Attempt to create a song with a non-integer duration
-    with pytest.raises(ValueError, match="Invalid song duration: invalid \(must be a positive integer\)."):
-        create_song(artist="Artist Name", title="Song Title", year=2022, genre="Pop", duration="invalid")
+    # Expect the function to raise a ValueError with a specific message when handling the IntegrityError
+
+# #make sure that match is right, it probably is not
+    with pytest.raises(ValueError, match="Meal with meal 'Sushi' already exists."):
+        create_meal(meal="Sushi", cuisine="Asian", price="11", difficulty="MED")
 
 def test_create_meal_invalid_price():
-    """Test error when trying to create a meal with invalid price (e.g., negative duration)"""
+    """Test error when trying to create a meal with invalid price (e.g., negative price)"""
 
     # Attempt to create a meal with a negative price
     with pytest.raises(ValueError, match="Invalid price: -10. \Price must be a positive number\."):
@@ -83,4 +90,16 @@ def test_create_meal_invalid_price():
     # Attempt to create a meal with a non-float price
     with pytest.raises(ValueError, match="Invalid price: ten. \Price must be a positive number\."):
         create_meal(meal="Sushi", cuisine="Japanese", price="ten", difficulty="HIGH")
+
+def test_create_meal_invalid_difficulty():
+    """Test error when trying to create a meal with invalid difficulty (e.g., not "HIGH" "MED" or "LOW")"""
+
+    # Attempt to create a meal with a non "HIGH" "MED" "LOW" difficulty
+    with pytest.raises(ValueError, match="IInvalid difficulty level: Hard\. Must be 'LOW', 'MED', or 'HIGH'\."):
+        create_meal(meal="Sushi", cuisine="Japanese", price="10", difficulty="Hard")
+
+    # Attempt to create a meal with a non-string difficulty
+    with pytest.raises(ValueError, match="Invalid difficulty level: 420\. Must be 'LOW', 'MED', or 'HIGH'\."):
+        create_meal(meal="Sushi", cuisine="Japanese", price="10", difficulty=420)
+
 
