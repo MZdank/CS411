@@ -26,11 +26,17 @@ def sample_meal2():
 def sample_battle(sample_meal1, sample_meal2):
     return [sample_meal1, sample_meal2]
 
-def test_battle(battle_model, sample_battle):
+def test_battle(battle_model, sample_battle, mock_update_meal_stats):
     """Test a a battle will return the correct winner."""
     battle_model.combatants.extend(sample_battle)
-    winner = battle_model.battle()
-    assert winner == "Soup"
+    battle_model.battle()
+    mock_update_meal_stats.assert_called_with(1)
+
+def test_battle_error(battle_model, sample_meal1):
+     battle_model.prep_combatant(sample_meal1)
+     with pytest.raises(ValueError, match="Two combatants must be prepped for a battle."):
+           battle_model.battle()
+
 
 def test_clear_combatants(battle_model, sample_battle):
     """Test clearing the comatants of the battle."""
