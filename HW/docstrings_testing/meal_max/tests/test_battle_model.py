@@ -33,6 +33,7 @@ def test_battle(battle_model, sample_battle, mock_update_meal_stats):
     mock_update_meal_stats.assert_called_with(1)
 
 def test_battle_error(battle_model, sample_meal1):
+     """Test error for starting a battle with only one combatant."""
      battle_model.prep_combatant(sample_meal1)
      with pytest.raises(ValueError, match="Two combatants must be prepped for a battle."):
            battle_model.battle()
