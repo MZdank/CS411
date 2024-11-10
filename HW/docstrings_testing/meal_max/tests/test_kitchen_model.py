@@ -40,7 +40,7 @@ def mock_cursor(mocker):
     def mock_get_db_connection():
         yield mock_conn  # Yield the mocked connection object
 
-    mocker.patch("meal_max.models.kitchen_model.py.get_db_connection", mock_get_db_connection)
+    mocker.patch("meal_max.models.kitchen_model.get_db_connection", mock_get_db_connection)
 
     return mock_cursor  # Return the mock cursor so we can set expectations per test
 
@@ -52,7 +52,7 @@ def mock_cursor(mocker):
 
 def test_create_meal(mock_cursor):
     """Testing creating a new meal"""
-    create_meal(meal="Sushi", cuisine="Japanese", price="10", difficulty="HIGH")
+    create_meal(meal="Sushi", cuisine="Japanese", price=10, difficulty="HIGH")
 
     expected_query = normalize_whitespace("""
         INSERT INTO meals (meal, cuisine, price, difficulty)
@@ -68,7 +68,7 @@ def test_create_meal(mock_cursor):
     expected_arguments = ("Sushi", "Japanese", 10, "HIGH")
     assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
 
-def test_create_meal_duplicate():
+def test_create_meal_duplicate(mock_cursor):
     """Testing creating a meal with a duplicate name"""
 
     # Simulate that the database will raise an IntegrityError due to a duplicate entry
@@ -77,30 +77,30 @@ def test_create_meal_duplicate():
     # Expect the function to raise a ValueError with a specific message when handling the IntegrityError
 
 # #make sure that match is right, it probably is not
-    with pytest.raises(ValueError, match="Meal with meal 'Sushi' already exists."):
-        create_meal(meal="Sushi", cuisine="Asian", price="11", difficulty="MED")
+    with pytest.raises(ValueError, match="Meal with name 'Sushi' already exists"):
+        create_meal(meal="Sushi", cuisine="Asian", price=11, difficulty="MED")
 
 def test_create_meal_invalid_price():
     """Test error when trying to create a meal with invalid price (e.g., negative price)"""
 
     # Attempt to create a meal with a negative price
-    with pytest.raises(ValueError, match="Invalid price: -10. \Price must be a positive number\."):
+    with pytest.raises(ValueError, match="Invalid price: -10. Price must be a positive number."):
         create_meal(meal="Sushi", cuisine="Japanese", price="-10", difficulty="HIGH")
 
     # Attempt to create a meal with a non-float price
-    with pytest.raises(ValueError, match="Invalid price: ten. \Price must be a positive number\."):
+    with pytest.raises(ValueError, match="Invalid price: ten. Price must be a positive number."):
         create_meal(meal="Sushi", cuisine="Japanese", price="ten", difficulty="HIGH")
 
 def test_create_meal_invalid_difficulty():
     """Test error when trying to create a meal with invalid difficulty (e.g., not "HIGH" "MED" or "LOW")"""
 
     # Attempt to create a meal with a non "HIGH" "MED" "LOW" difficulty
-    with pytest.raises(ValueError, match="IInvalid difficulty level: Hard\. Must be 'LOW', 'MED', or 'HIGH'\."):
-        create_meal(meal="Sushi", cuisine="Japanese", price="10", difficulty="Hard")
+    with pytest.raises(ValueError, match="Invalid difficulty level: Hard. Must be 'LOW', 'MED', or 'HIGH'."):
+        create_meal(meal="Sushi", cuisine="Japanese", price=10, difficulty="Hard")
 
     # Attempt to create a meal with a non-string difficulty
     with pytest.raises(ValueError, match="Invalid difficulty level: 420\. Must be 'LOW', 'MED', or 'HIGH'\."):
-        create_meal(meal="Sushi", cuisine="Japanese", price="10", difficulty=420)
+        create_meal(meal="Sushi", cuisine="Japanese", price=10, difficulty=420)
 
 def test_delete_meal(mock_cursor):
     """Test soft deleting a meal by meal ID."""
@@ -143,17 +143,17 @@ def test_delete_meal_bad_id(mock_cursor):
     with pytest.raises(ValueError, match="Meal with ID 999 not found"):
         delete_meal(999)
 
-def test_delete_song_already_deleted(mock_cursor):
+def test_delete_meal_already_deleted(mock_cursor):
     """Test error when trying to delete a meal that's already marked as deleted."""
 
     # Simulate that the song exists but is already marked as deleted
     mock_cursor.fetchone.return_value = ([True])
 
     # Expect a ValueError when attempting to delete a song that's already been deleted
-    with pytest.raises(ValueError, match="Meal with ID 999 has already been deleted"):
+    with pytest.raises(ValueError, match="Meal with ID 999 has been deleted"):
         delete_meal(999)
 
-def test_clear_meals(mock_ursor, mocker):
+def test_clear_meals(mock_cursor, mocker):
     """Test clearing the entire meal catalog (removes all meals)."""
 
     # Mock the file reading
@@ -234,7 +234,7 @@ def test_get_meal_by_name(mock_cursor):
     actual_arguments = mock_cursor.execute.call_args[0][1]
 
     # Assert that the SQL query was executed with the correct arguments
-    expected_arguments = ("Pizza")
+    expected_arguments = ("Pizza",)
     assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
 
 def test_get_meal_by_name_bad_name(mock_cursor):
@@ -270,7 +270,7 @@ def test_update_meal_stats_win(mock_cursor):
     actual_arguments = mock_cursor.execute.call_args_list[1][0][1]
 
     # Assert that the SQL query was executed with the correct arguments (song ID)
-    expected_arguments = (meal_id, 'win')
+    expected_arguments = (meal_id,)
     assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
 
 def test_update_meal_stats_loss(mock_cursor):
@@ -298,7 +298,7 @@ def test_update_meal_stats_loss(mock_cursor):
     actual_arguments = mock_cursor.execute.call_args_list[1][0][1]
 
     # Assert that the SQL query was executed with the correct arguments (song ID)
-    expected_arguments = (meal_id, 'loss')
+    expected_arguments = (meal_id,)
     assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
 
 def test_update_meal_stats_deleted_meal(mock_cursor):
