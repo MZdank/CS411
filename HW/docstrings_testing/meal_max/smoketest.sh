@@ -179,7 +179,7 @@ clear_combatants() {
 ############################################################
 
 get_meal_leaderboard() {
-  echo "Getting meal leaderboard sorted by play count..."
+  echo "Getting meal leaderboard"
   response=$(curl -s -X GET "$BASE_URL/leaderboard")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Meal leaderboard retrieved successfully."
