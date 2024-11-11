@@ -320,8 +320,8 @@ def test_update_meal_stats_deleted_meal(mock_cursor):
 #
 ######################################################
 
-def test_get_leaderboard(mock_cursor):
-    """Test retrieving the leaderboard of meals sorted by wins or win percentage."""
+def test_get_leaderboard_by_wins(mock_cursor):
+    """Test retrieving the leaderboard of meals sorted by wins"""
 
     # I don't understand this, it seems to me to be cheating to hardcode it in order,
     # but in test_song_model it's hardcoded in order, so I guess that's fine????
@@ -353,7 +353,7 @@ def test_get_leaderboard(mock_cursor):
     assert actual_query_by_wins == expected_query_by_wins, "The SQL query for wins did not match the expected structure."
 
 def test_get_leaderboard_win_pct(mock_cursor):
-        
+    """Test retrieving the leaderboard of meals sorted by win_pct"""
     # Again, don't get this
     mock_cursor.fetchall.return_value = [
         (3, "Meal C", "Chinese", 10.00, "Hard", 5, 4, 0.80),
@@ -382,6 +382,7 @@ def test_get_leaderboard_win_pct(mock_cursor):
     assert actual_query_by_win_pct == expected_query_by_win_pct, "The SQL query for win_pct did not match the expected structure."
 
 def test_get_leaderboard_invalid_sort(mock_cursor):
+    """Sort it by a string that's not wins or win_pct"""
         
     # Again, don't get this
     mock_cursor.fetchall.return_value = [
