@@ -99,7 +99,7 @@ def test_create_meal_invalid_difficulty():
         create_meal(meal="Sushi", cuisine="Japanese", price=10, difficulty="Hard")
 
     # Attempt to create a meal with a non-string difficulty
-    with pytest.raises(ValueError, match="Invalid difficulty level: 420\. Must be 'LOW', 'MED', or 'HIGH'\."):
+    with pytest.raises(ValueError, match="Invalid difficulty level: 420. Must be 'LOW', 'MED', or 'HIGH'."):
         create_meal(meal="Sushi", cuisine="Japanese", price=10, difficulty=420)
 
 def test_delete_meal(mock_cursor):
@@ -323,21 +323,22 @@ def test_update_meal_stats_deleted_meal(mock_cursor):
 def test_get_leaderboard(mock_cursor):
     """Test retrieving the leaderboard of meals sorted by wins or win percentage."""
 
-    # Simulate leaderboard data in the database
+    # I don't understand this, it seems to me to be cheating to hardcode it in order,
+    # but in test_song_model it's hardcoded in order, so I guess that's fine????
     mock_cursor.fetchall.return_value = [
-        (1, "Meal A", "Italian", 15.99, "Easy", 10, 8, 0.8),
-        (2, "Meal B", "Mexican", 12.50, "Medium", 15, 10, 0.6667),
-        (3, "Meal C", "Chinese", 10.00, "Hard", 20, 15, 0.75)
+        (3, "Meal C", "Chinese", 10.00, "Hard", 5, 4, 0.80),
+        (1, "Meal A", "Italian", 15.99, "Easy", 4, 3, 0.75),
+        (2, "Meal B", "Mexican", 12.50, "Medium", 2, 1, 0.5)
     ]
 
     # Test sorting by wins
-    leaderboard = get_leaderboard(sort_by="wins")
+    leaderboard = get_leaderboard()
 
     # Expected output when sorted by wins
     expected_result_by_wins = [
-        {"id": 3, "meal": "Meal C", "cuisine": "Chinese", "price": 10.00, "difficulty": "Hard", "battles": 20, "wins": 15, "win_pct": 75.0},
-        {"id": 2, "meal": "Meal B", "cuisine": "Mexican", "price": 12.50, "difficulty": "Medium", "battles": 15, "wins": 10, "win_pct": 66.7},
-        {"id": 1, "meal": "Meal A", "cuisine": "Italian", "price": 15.99, "difficulty": "Easy", "battles": 10, "wins": 8, "win_pct": 80.0}
+        {"id": 3, "meal": "Meal C", "cuisine": "Chinese", "price": 10.00, "difficulty": "Hard", "battles": 5, "wins": 4, "win_pct": 80.0},
+        {"id": 1, "meal": "Meal A", "cuisine": "Italian", "price": 15.99, "difficulty": "Easy", "battles": 4, "wins": 3, "win_pct": 75.0},
+        {"id": 2, "meal": "Meal B", "cuisine": "Mexican", "price": 12.50, "difficulty": "Medium", "battles": 2, "wins": 1, "win_pct": 50.0},
     ]
 
     assert leaderboard == expected_result_by_wins, f"Expected {expected_result_by_wins}, but got {leaderboard}"
@@ -351,14 +352,22 @@ def test_get_leaderboard(mock_cursor):
     actual_query_by_wins = normalize_whitespace(mock_cursor.execute.call_args[0][0])
     assert actual_query_by_wins == expected_query_by_wins, "The SQL query for wins did not match the expected structure."
 
-    # Test sorting by win percentage
+def test_get_leaderboard_win_pct(mock_cursor):
+        
+    # Again, don't get this
+    mock_cursor.fetchall.return_value = [
+        (3, "Meal C", "Chinese", 10.00, "Hard", 5, 4, 0.80),
+        (1, "Meal A", "Italian", 15.99, "Easy", 4, 3, 0.75),
+        (2, "Meal B", "Mexican", 12.50, "Medium", 100, 50, 0.5)
+    ]
+
     leaderboard = get_leaderboard(sort_by="win_pct")
 
     # Expected output when sorted by win percentage
     expected_result_by_win_pct = [
-        {"id": 1, "meal": "Meal A", "cuisine": "Italian", "price": 15.99, "difficulty": "Easy", "battles": 10, "wins": 8, "win_pct": 80.0},
-        {"id": 3, "meal": "Meal C", "cuisine": "Chinese", "price": 10.00, "difficulty": "Hard", "battles": 20, "wins": 15, "win_pct": 75.0},
-        {"id": 2, "meal": "Meal B", "cuisine": "Mexican", "price": 12.50, "difficulty": "Medium", "battles": 15, "wins": 10, "win_pct": 66.7}
+        {"id": 3, "meal": "Meal C", "cuisine": "Chinese", "price": 10.00, "difficulty": "Hard", "battles": 5, "wins": 4, "win_pct": 80.0},
+        {"id": 1, "meal": "Meal A", "cuisine": "Italian", "price": 15.99, "difficulty": "Easy", "battles": 4, "wins": 3, "win_pct": 75.0},
+        {"id": 2, "meal": "Meal B", "cuisine": "Mexican", "price": 12.50, "difficulty": "Medium", "battles": 100, "wins": 50, "win_pct": 50.0},
     ]
 
     assert leaderboard == expected_result_by_win_pct, f"Expected {expected_result_by_win_pct}, but got {leaderboard}"
@@ -371,6 +380,19 @@ def test_get_leaderboard(mock_cursor):
     """)
     actual_query_by_win_pct = normalize_whitespace(mock_cursor.execute.call_args[0][0])
     assert actual_query_by_win_pct == expected_query_by_win_pct, "The SQL query for win_pct did not match the expected structure."
+
+def test_get_leaderboard_invalid_sort(mock_cursor):
+        
+    # Again, don't get this
+    mock_cursor.fetchall.return_value = [
+        (3, "Meal C", "Chinese", 10.00, "Hard", 5, 4, 0.80),
+        (1, "Meal A", "Italian", 15.99, "Easy", 4, 3, 0.75),
+        (2, "Meal B", "Mexican", 12.50, "Medium", 100, 50, 0.5)
+    ]
+
+    with pytest.raises(ValueError, match="Invalid sort_by parameter: d-o double G"):
+        get_leaderboard(sort_by="d-o double G")
+
 
 def test_get_leaderboard_empty(mock_cursor, caplog):
     """Test getting the leaderboard when it's empty"""
@@ -385,7 +407,8 @@ def test_get_leaderboard_empty(mock_cursor, caplog):
     expected_query = normalize_whitespace("""
         SELECT id, meal, cuisine, price, difficulty, battles, wins, (wins * 1.0 / battles) AS win_pct
         FROM meals WHERE deleted = false AND battles > 0
+        ORDER BY wins DESC
     """)
+
     actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
     assert actual_query == expected_query, "The SQL query did not match the expected structure."
-
