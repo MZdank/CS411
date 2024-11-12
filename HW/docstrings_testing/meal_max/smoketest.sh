@@ -2,7 +2,7 @@
 BASE_URL="http://localhost:5000/api"
 
 # Flag to control whether to echo JSON output
-ECHO_JSON=flase
+ECHO_JSON=false
 
 ###############################################
 #
