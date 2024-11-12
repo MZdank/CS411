@@ -30,7 +30,7 @@ def test_battle(battle_model, sample_battle, mock_update_meal_stats):
     """Test a a battle will return the correct winner."""
     battle_model.combatants.extend(sample_battle)
     battle_model.battle()
-    mock_update_meal_stats.assert_called_with(1)
+    mock_update_meal_stats.assert_called_with(1, 'loss')
 
 def test_battle_error(battle_model, sample_meal1):
      """Test error for starting a battle with only one combatant."""
